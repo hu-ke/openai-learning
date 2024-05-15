@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 import openai
 import langchain
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 
 load_dotenv()
 

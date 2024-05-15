@@ -1,4 +1,4 @@
 jupyterlab
 python-dotenv
-langchain
+langchain-openai
 openai

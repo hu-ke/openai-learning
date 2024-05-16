@@ -1,4 +1,7 @@
-jupyterlab
+langchain
+langchain_openai 
+langchain_core
 python-dotenv
-langchain-openai
-openai
+langserve
+fastapi
+uvicorn

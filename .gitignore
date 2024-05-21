@@ -3,3 +3,4 @@
 venv*/
 .env
 nodejs/apiKey.js
+node_modules/

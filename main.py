@@ -1,16 +1,6 @@
-# print('hello world')
-import os
-from dotenv import load_dotenv
+from langchain_community.document_loaders import PyPDFLoader
 
-import openai
-import langchain
-from langchain_openai import OpenAI
-
-load_dotenv()
-
-my_key = os.getenv('OPENAI_API_KEY')
-print(f"Key is: {my_key}")
-
-llm = OpenAI(temperature=0, openai_api_key=my_key)
-text = "What is AI?"
-print(llm(text))
+# loader = PyPDFLoader("./thethreekingdoms.pdf")
+loader = PyPDFLoader('./1949-2009.pdf')
+pages = loader.load_and_split()
+print(pages)

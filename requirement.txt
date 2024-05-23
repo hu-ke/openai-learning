@@ -1,4 +1,9 @@
-jupyterlab
 python-dotenv
-langchain-openai
+uvicorn
+gunicorn
 openai
+langchain
+langchain_openai
+langchain-community
+scikit-learn
+fastapi

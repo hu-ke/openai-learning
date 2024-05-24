@@ -114,6 +114,10 @@ async def create_upload_file(file_upload: UploadFile):
 
     return {"filename": summary}
 
+@app.get('/')
+async def root(): 
+    return { 'message': 'Hello World'}
+
 # Testing the summarizer
 # if __name__ == '__main__':
 #     openai_api_key = os.getenv('OPENAI_API_KEY')

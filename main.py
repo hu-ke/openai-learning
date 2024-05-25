@@ -112,7 +112,14 @@ async def create_upload_file(file_upload: UploadFile):
     with open(save_to, 'rb') as file: 
         summary = generate_summary(file, openai_api_key, verbose=True)
 
-    return {"filename": summary}
+    return {
+        'code': 200,
+        'msg': 'the book uploaded and summarized successfully.',
+        'data': {
+            'filename': file_upload.filename,
+            'summary': summary
+        }
+    }
 
 @app.get('/')
 async def root(): 

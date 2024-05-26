@@ -9,15 +9,20 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain.prompts import PromptTemplate
 from langchain.schema import Document
 from langchain.chat_models import ChatOpenAI
+from langchain.chains.question_answering import load_qa_chain
+from langchain.vectorstores import Chroma, Pinecone
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 UPLOAD_DIR = Path() / 'upload'
 
 app = FastAPI()
-
 origins = [
     "http://localhost:5173",
+    "https://reader.guru",
+    "http://reader.guru"
 ]
 
 app.add_middleware(
@@ -95,12 +100,12 @@ def create_final_summary(summaries, openai_api_key):
 def generate_summary(uploaded_file, openai_api_key, num_clusters=11, verbose=False):
     file_extension = os.path.splitext(uploaded_file.name)[1].lower()
     text = load_book(uploaded_file, file_extension)
-    return text
-    # docs, vectors = split_and_embed(text, openai_api_key)
-    # selected_indices = cluster_embeddings(vectors, num_clusters)
-    # summaries = summarize_chunks(docs, selected_indices, openai_api_key)
-    # final_summary = create_final_summary(summaries, openai_api_key)
-    # return final_summary
+    # return text
+    docs, vectors = split_and_embed(text, openai_api_key)
+    selected_indices = cluster_embeddings(vectors, num_clusters)
+    summaries = summarize_chunks(docs, selected_indices, openai_api_key)
+    final_summary = create_final_summary(summaries, openai_api_key)
+    return final_summary
 
 @app.post("/uploadfile/")
 async def create_upload_file(file_upload: UploadFile):

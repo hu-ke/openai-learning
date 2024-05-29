@@ -107,7 +107,7 @@ def generate_summary(uploaded_file, openai_api_key, num_clusters=11, verbose=Fal
     final_summary = create_final_summary(summaries, openai_api_key)
     return final_summary
 
-@app.post("/uploadfile/")
+@app.post("/api/uploadfile/")
 async def create_upload_file(file_upload: UploadFile):
     data = await file_upload.read()
     save_to = UPLOAD_DIR / file_upload.filename
@@ -126,7 +126,7 @@ async def create_upload_file(file_upload: UploadFile):
         }
     }
 
-@app.get('/')
+@app.get('/api')
 async def root(): 
     return { 'message': 'Hello World'}
 

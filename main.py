@@ -14,9 +14,11 @@ from langchain.vectorstores import Chroma, Pinecone
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from extractImg import extract_cover
 from dotenv import load_dotenv
 load_dotenv()
-UPLOAD_DIR = Path() / 'upload'
+BOOKS_DIR = Path() / 'books'
+BOOKS_COVERS_DIR = Path() / 'book_covers'
 
 app = FastAPI()
 origins = [
@@ -100,9 +102,12 @@ def create_final_summary(summaries, openai_api_key):
 def generate_summary(uploaded_file, openai_api_key, num_clusters=11, verbose=False):
     file_extension = os.path.splitext(uploaded_file.name)[1].lower()
     text = load_book(uploaded_file, file_extension)
-    # return text
+    return text
     docs, vectors = split_and_embed(text, openai_api_key)
     selected_indices = cluster_embeddings(vectors, num_clusters)
+    print(selected_indices)
+    print(len(docs))
+    print(len(vectors))
     summaries = summarize_chunks(docs, selected_indices, openai_api_key)
     final_summary = create_final_summary(summaries, openai_api_key)
     return final_summary
@@ -110,18 +115,32 @@ def generate_summary(uploaded_file, openai_api_key, num_clusters=11, verbose=Fal
 @app.post("/api/uploadfile/")
 async def create_upload_file(file_upload: UploadFile):
     data = await file_upload.read()
-    save_to = UPLOAD_DIR / file_upload.filename
-    with open(save_to, 'wb') as f:
+    target_file = BOOKS_DIR / file_upload.filename
+    cover_name = os.path.splitext(file_upload.filename)[0].lower()
+    cover_name = f"{cover_name}.png"
+    target_file_cover = BOOKS_COVERS_DIR / cover_name
+    with open(target_file, 'wb') as f:
         f.write(data)
+    
+    extract_cover(target_file, target_file_cover)
+    return {
+        'code': 200,
+        'msg': 'the book has been uploaded successfully.'
+    }
+    
 
+@app.post("/api/summarize")
+async def summarize_file(request: dict):
+    print(request, request['filename'])
+    save_to = BOOKS_DIR / request['filename']
     with open(save_to, 'rb') as file: 
         summary = generate_summary(file, openai_api_key, verbose=True)
 
     return {
         'code': 200,
-        'msg': 'the book uploaded and summarized successfully.',
+        'msg': 'the summarization has been generated successfully.',
         'data': {
-            'filename': file_upload.filename,
+            'filename': request['filename'],
             'summary': summary
         }
     }
@@ -134,7 +153,8 @@ async def root():
 # if __name__ == '__main__':
 #     openai_api_key = os.getenv('OPENAI_API_KEY')
 #     # book_path = "./thethreekingdoms.pdf"
-#     book_path = './wentiejun.pdf'
+#     # book_path = './wentiejun.pdf'
+#     book_path = './IntoThinAirBook.pdf'
 #     with open(book_path, 'rb') as uploaded_file:
 #         summary = generate_summary(uploaded_file, openai_api_key, verbose=True)
 #         print(summary)

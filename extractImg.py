@@ -25,4 +25,4 @@ def extract_cover(pdf_path, output_image):
     os.remove(temp_pdf)
 
 # 提取PDF的第一页为封面图片
-extract_cover("./charlie-and-the-chocolate-factory-by-roald-dahl.pdf", "cover.jpg")
+# extract_cover("./charlie-and-the-chocolate-factory-by-roald-dahl.pdf", "book_covers/cover.jpg")

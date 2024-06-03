@@ -11,10 +11,11 @@ from langchain.schema import Document
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.vectorstores import Chroma, Pinecone
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from extractImg import extract_cover
+from turnTextIntoTokens import num_tokens_from_string
 from dotenv import load_dotenv
 load_dotenv()
 BOOKS_DIR = Path() / 'books'
@@ -36,6 +37,7 @@ app.add_middleware(
 )
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
+global_cache: dict[str, str]= {}
 
 def load_book(file_obj, file_extension):
     """Load the content of a book based on its file type."""
@@ -57,11 +59,16 @@ def load_book(file_obj, file_extension):
     return text
 
 def split_and_embed(text, openai_api_key):
-    text_splitter = RecursiveCharacterTextSplitter(separators=["\n\n", "\n", "\t"], chunk_size=10000, chunk_overlap=3000)
+    text_splitter = RecursiveCharacterTextSplitter(separators=["\n\n", "\n", "\t"], chunk_size=10000, chunk_overlap=300)
     docs = text_splitter.create_documents([text])
     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-    vectors = embeddings.embed_documents([x.page_content for x in docs])
-    return docs, vectors
+    content_list = []
+    for x in docs:
+        content_list.append(x.page_content)
+    vectors = embeddings.embed_documents(content_list)
+    tokens = num_tokens_from_string(' '.join(content_list), 'cl100k_base')
+    # vectors = embeddings.embed_documents([x.page_content for x in docs])
+    return docs, vectors, tokens
 
 
 def cluster_embeddings(vectors, num_clusters):
@@ -99,49 +106,76 @@ def create_final_summary(summaries, openai_api_key):
     final_summary = reduce_chain.run([Document(page_content=summaries)])
     return final_summary
 
-def generate_summary(uploaded_file, openai_api_key, num_clusters=11, verbose=False):
+def extract_book_texts(uploaded_file):
     file_extension = os.path.splitext(uploaded_file.name)[1].lower()
     text = load_book(uploaded_file, file_extension)
     return text
-    docs, vectors = split_and_embed(text, openai_api_key)
-    selected_indices = cluster_embeddings(vectors, num_clusters)
-    print(selected_indices)
-    print(len(docs))
-    print(len(vectors))
-    summaries = summarize_chunks(docs, selected_indices, openai_api_key)
-    final_summary = create_final_summary(summaries, openai_api_key)
-    return final_summary
+
+def generate_summary(openai_api_key, num_clusters=11, verbose=False):
+    # extract_book_texts(uploaded_file)
+    # docs, vectors, tokens = split_and_embed(global_cache.get('texts'), openai_api_key)
+    d = dict()
+    d['final_summary']  = 'asdasdsfsdsdcsdkl csdiochudis ashcusd'
+    return d
+    # selected_indices = cluster_embeddings(vectors, num_clusters)
+    # summaries = summarize_chunks(docs, selected_indices, openai_api_key)
+    # final_summary = create_final_summary(summaries, openai_api_key)
+    # return final_summary
 
 @app.post("/api/uploadfile/")
-async def create_upload_file(file_upload: UploadFile):
+async def create_upload_file(file_upload: UploadFile, deviceId: str = Header(None, alias="deviceId")):
     data = await file_upload.read()
-    target_file = BOOKS_DIR / file_upload.filename
+    personal_book_directory = BOOKS_DIR / deviceId
+    target_file =  personal_book_directory / file_upload.filename
+    if not os.path.exists(personal_book_directory):
+        os.makedirs(personal_book_directory)
+
     cover_name = os.path.splitext(file_upload.filename)[0].lower()
     cover_name = f"{cover_name}.png"
-    target_file_cover = BOOKS_COVERS_DIR / cover_name
+    personal_book_cover_direcory = BOOKS_COVERS_DIR / deviceId
+    if not os.path.exists(personal_book_cover_direcory):
+        os.makedirs(personal_book_cover_direcory)
+
+    target_book_cover = personal_book_cover_direcory / cover_name
+
     with open(target_file, 'wb') as f:
         f.write(data)
     
-    extract_cover(target_file, target_file_cover)
+    extract_cover(target_file, target_book_cover)
+
+    with open(target_file, 'rb') as file:
+        texts = extract_book_texts(file)
+        docs, vectors, tokens = split_and_embed(texts, openai_api_key)
+        global_cache['docs'] = docs
+        global_cache['vectors'] = vectors
+
+    tokens_of_first_doc = num_tokens_from_string(docs[0].page_content, 'cl100k_base')
     return {
         'code': 200,
-        'msg': 'the book has been uploaded successfully.'
+        'msg': 'the book has been uploaded successfully.',
+        'data': {
+            'coverImgUrl': f'https://reader.guru/images/{cover_name}',
+            'numsOfTokens': tokens,
+            'numsOfDocs': len(docs),
+            'tokensOfFirstDoc': tokens_of_first_doc,
+            'fileName': os.path.splitext(file_upload.filename)[0].lower()
+        }
     }
     
 
 @app.post("/api/summarize")
 async def summarize_file(request: dict):
     print(request, request['filename'])
-    save_to = BOOKS_DIR / request['filename']
-    with open(save_to, 'rb') as file: 
-        summary = generate_summary(file, openai_api_key, verbose=True)
+    # save_to = BOOKS_DIR / request['filename']
+    # with open(save_to, 'rb') as file: 
+    res = generate_summary(openai_api_key, 11, verbose=True)
 
     return {
         'code': 200,
         'msg': 'the summarization has been generated successfully.',
         'data': {
-            'filename': request['filename'],
-            'summary': summary
+            'fileName': request['filename'],
+            'summary': res['final_summary'],
         }
     }
 

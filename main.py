@@ -115,12 +115,12 @@ def generate_summary(openai_api_key, num_clusters=11, verbose=False):
     # extract_book_texts(uploaded_file)
     # docs, vectors, tokens = split_and_embed(global_cache.get('texts'), openai_api_key)
     d = dict()
-    # vectors = global_cache.get('vectors')
-    # selected_indices = cluster_embeddings(vectors, num_clusters)
-    # summaries = summarize_chunks(global_cache.get('docs'), selected_indices, openai_api_key)
-    # final_summary = create_final_summary(summaries, openai_api_key)
+    vectors = global_cache.get('vectors')
+    selected_indices = cluster_embeddings(vectors, num_clusters)
+    summaries = summarize_chunks(global_cache.get('docs'), selected_indices, openai_api_key)
+    final_summary = create_final_summary(summaries, openai_api_key)
     # return final_summary
-    d['final_summary']  = '这本书主要讲述了作者和他的队友们攀登珠穆朗玛峰的经历。作者对登山充满热情，尽管已过登山黄金年龄，但当有机会参加罗布·霍尔的珠穆朗玛峰登山队时，他毫不犹豫地接受了邀请。在准备攀登珠穆朗玛峰之前，他们进行了详细的物资准备和基地营地的建设，并了解了可能遇到的困难和危险。 在攀登过程中，他们遇到了各种挑战，包括恶劣的天气条件，如强风和暴风雪。在这个过程中，每个人都为自己而战，没有深厚的忠诚感。然而，他们在登顶珠穆朗玛峰时遭遇到了暴风雪和迷路的情况，导致他们迷失了方向，最终困在了山上。 在1996年5月11日，一次严重的登山事故发生了，一些登山者失踪或丧生。其中包括Rob Hall和Doug Hansen，他们在下山途中遇到了困境，由于身体状况不佳，他们无法继续前进，最终被留在了山上。 在事故发生后，作者回到美国，面对亲友们的悲伤和自责，他感到内疚和悲伤。他对登山事故的责任感和内疚感，以及对死亡的深刻体验，让他开始反思导致事故发生的原因，包括过度自信和傲慢。 此外，作者还对一本名为《The Climb》的书进行了评论和辩护，该书是对他的作品《Into Thin Air》的批评和质疑。作者指出，《The Climb》中对他的指责是不准确的，并且作者认为这是对他作为记者的诚信的质疑。 最后，作者讲述了Anatoli Boukreev在登山事业中的一系列成就和挑战，以及他在攀登Annapurna I时的死亡，这让作者感到非常沮丧，他们之间的争论也变得无关紧要。'
+    d['final_summary'] = final_summary
     return d
     
 

@@ -4,3 +4,6 @@ venv*/
 .env
 nodejs/apiKey.js
 node_modules/
+book_covers/
+books/
+__pycache__

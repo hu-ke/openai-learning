@@ -1,4 +1,3 @@
 jupyterlab
-python-dotenv
-langchain-openai
-openai
+numpy
+pandas
